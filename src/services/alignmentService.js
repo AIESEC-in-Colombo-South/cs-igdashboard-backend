@@ -1,6 +1,8 @@
 const Person = require('../models/person');
 const Application = require('../models/application');
 
+const SRI_LANKA_OFFSET_MINUTES = 5 * 60 + 30; // UTC+5:30
+
 function buildMatchStage(fieldName, ids, dateField, dateRange) {
   const base = {};
 
@@ -25,12 +27,18 @@ function resolveTodayRange(enabled) {
     return null;
   }
 
-  const now = new Date();
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
+  const offsetMs = SRI_LANKA_OFFSET_MINUTES * 60 * 1000;
+  const now = Date.now();
+  const localNow = new Date(now + offsetMs);
+  const year = localNow.getUTCFullYear();
+  const month = localNow.getUTCMonth();
+  const day = localNow.getUTCDate();
+
+  const startUtcMs = Date.UTC(year, month, day) - offsetMs;
+  const start = new Date(startUtcMs);
 
   const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+  end.setUTCDate(end.getUTCDate() + 1);
 
   return { start, end };
 }

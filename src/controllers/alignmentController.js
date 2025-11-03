@@ -39,7 +39,7 @@ function parseTodayFlag(value) {
   }
 
   const normalized = String(value).trim().toLowerCase();
-  return ['1', 'true', 'yes', 'y'].includes(normalized);
+  return ['1', 'true', 'yes', 'y', 'on', 't'].includes(normalized);
 }
 
 function parseDate(value, fieldName) {
