@@ -198,7 +198,7 @@ Manual approvals tracking separate from EXPA imports.
 #### Create approval entry
 
 - **POST** `/approvals`
-- Body (JSON):
+- Query params:
   - `lc_alignment_id` (required, number)
   - `value` (required, non-negative number)
 
@@ -206,14 +206,7 @@ Manual approvals tracking separate from EXPA imports.
 
 ```
 Method: POST
-URL: http://localhost:3000/approvals
-Headers:
-  Content-Type: application/json
-Body (raw JSON):
-{
-  "lc_alignment_id": 39880,
-  "value": 3
-}
+URL: http://localhost:3000/approvals?lc_alignment_id=39880&value=3
 ```
 
 #### Get approval totals

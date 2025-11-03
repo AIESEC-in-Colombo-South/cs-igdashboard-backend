@@ -26,15 +26,22 @@ function parseIds(rawIds) {
 
 async function createApprovalController(req, res, next) {
   try {
-    const { lc_alignment_id, value } = req.body || {};
+    const payload = {
+      lc_alignment_id:
+        req.query?.lc_alignment_id ??
+        req.query?.alignment ??
+        req.params?.lc_alignment_id,
+      value:
+        req.query?.value ??
+        req.query?.approvals ??
+        req.params?.value
+    };
 
-    if (lc_alignment_id == null || value == null) {
-      const error = new Error('lc_alignment_id and value are required.');
-      error.status = 400;
-      throw error;
-    }
+    console.log('[createApprovalController] Query payload:', payload);
 
-    const approval = await createApproval({ lc_alignment_id, value });
+    const approval = await createApproval(payload);
+
+    console.log('[createApprovalController] Stored approval:', approval);
 
     res.status(201).json({
       success: true,
@@ -48,7 +55,11 @@ async function createApprovalController(req, res, next) {
 async function getApprovalSumsController(req, res, next) {
   try {
     const ids = parseIds(req.query.ids);
+    console.log('[getApprovalSumsController] Parsed ids:', ids);
+
     const data = await getApprovalSums({ ids });
+
+    console.log('[getApprovalSumsController] Result:', data);
 
     res.json({
       success: true,

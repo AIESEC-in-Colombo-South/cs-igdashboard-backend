@@ -127,13 +127,7 @@ The daily endpoints return an array ordered by date. Each item contains the date
 Record manual approval totals per alignment:
 
 ```
-POST http://localhost:3000/approvals
-Content-Type: application/json
-
-{
-  "lc_alignment_id": 39880,
-  "value": 3
-}
+POST http://localhost:3000/approvals?lc_alignment_id=39880&value=3
 ```
 
 Retrieve summed approvals (optionally filtered by alignment IDs):
@@ -170,3 +164,30 @@ You can override defaults via environment variables:
 - `SYNC_QUERY` – free-text search string
 
 Regardless of trigger, only records created in November are synced for both people and applications.
+
+## Approvals
+
+GET http://localhost:3000/approvals?ids=39880,7669,13106
+POST http://localhost:3000/approvals?lc_alignment_id=7669&value=2
+
+## Sign Ups
+
+Time range
+
+GET http://localhost:3000/alignments/signups/daily?start=2025-11-01&end=2025-11-03&ids=39880,7669,13106,10231
+
+Today
+
+GET http://localhost:3000/alignments/signups?ids=39880,7669,13106,10231&today=true
+
+All
+
+GET http://localhost:3000/alignments/applications?ids=39880,7669,13106,10231
+
+## Applications
+
+GET http://localhost:3000/alignments/applications?ids=39880,7669,13106,10231&today=true
+
+GET http://localhost:3000/alignments/applications/daily?start=2025-11-01&end=2025-11-04&ids=39880,7669
+
+GET http://localhost:3000/alignments/signups?ids=39880,7669,13106,10231
