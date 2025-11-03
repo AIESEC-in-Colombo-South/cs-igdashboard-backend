@@ -8,8 +8,14 @@ const HEALTHCHECK_URL = 'https://cs-igdashboard-backend.onrender.com/health';
 function triggerHealthCheck() {
   return new Promise((resolve) => {
     const request = https.get(HEALTHCHECK_URL, (response) => {
+      const isHealthy = response.statusCode && response.statusCode >= 200 && response.statusCode < 300;
       response.resume(); // Discard response data
-      response.on('end', resolve);
+      response.on('end', () => {
+        if (isHealthy) {
+          console.log('[syncPeopleJob] backend health is good');
+        }
+        resolve();
+      });
       response.on('error', resolve);
     });
 
