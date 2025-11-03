@@ -162,6 +162,7 @@ You can override defaults via environment variables:
 - `SYNC_PER_PAGE` – records per page (default `50`)
 - `SYNC_FILTERS` – JSON stringified GraphQL filters object
 - `SYNC_QUERY` – free-text search string
+- `CORS_ALLOW_ORIGINS` – comma-separated list of allowed origins (defaults to `*`)
 
 Regardless of trigger, only records created in November are synced for both people and applications.
 

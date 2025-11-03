@@ -6,16 +6,17 @@ Base URL (local development):
 http://localhost:3000
 ```
 
-All responses follow the shape:
+Unless noted otherwise, API responses include a `success` flag alongside a payload.
 
 ```json
 {
-  "success": true,
-  "...": "..."
+  "success": true
 }
 ```
 
 Errors return `success: false` with an explanatory `message`.
+
+The health check endpoint is the only exception and responds with a plain status object.
 
 ---
 
@@ -23,6 +24,13 @@ Errors return `success: false` with an explanatory `message`.
 
 - **GET** `/health`
 - Purpose: verify the service is running.
+- Response:
+
+```json
+{
+  "status": "ok"
+}
+```
 
 **Postman example**
 
@@ -43,6 +51,36 @@ URL: http://localhost:3000/health
   - `perPage` (default `50`, max `100`)
   - `status` – optional filter on EXPA status
   - `search` – case-insensitive match on `full_name`
+- Response:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 123,
+      "full_name": "Sample Person",
+      "status": "open",
+      "has_opportunity_applications": false,
+      "created_at": "2024-11-05T12:34:56.789Z",
+      "updated_at": "2024-11-07T09:15:00.000Z",
+      "last_active_at": null,
+      "person_profile": {
+        "selected_programmes": ["GV"]
+      },
+      "home_lc": { "id": 1340, "name": "COLOMBO SOUTH" },
+      "home_mc": { "id": 1000, "name": "SRI LANKA" },
+      "lc_alignment": { "id": 39880 }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "perPage": 50,
+    "total": 120,
+    "totalPages": 3
+  }
+}
+```
 
 **Postman example**
 
@@ -59,6 +97,20 @@ URL: http://localhost:3000/people?page=1&perPage=25&status=open&search=ana
   - `perPage` (default `50`)
   - `filters` – optional GraphQL filters object
   - `q` – optional free-text search string
+- Response:
+
+```json
+{
+  "success": true,
+  "synced": 42,
+  "details": {
+    "fetched": 60,
+    "eligible": 45,
+    "inserted": 42,
+    "skipped": 3
+  }
+}
+```
 
 **Postman example**
 
@@ -89,6 +141,43 @@ Body (raw JSON):
   - `status` – EXPA status filter
   - `currentStatus` – EXPA current status filter
   - `search` – match on applicant full name
+- Response:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 456,
+      "status": "open",
+      "current_status": "matched",
+      "created_at": "2024-11-09T08:00:00.000Z",
+      "updated_at": "2024-11-11T11:30:00.000Z",
+      "date_matched": "2024-11-10T00:00:00.000Z",
+      "date_approved": null,
+      "person": {
+        "id": 123,
+        "full_name": "Sample Person",
+        "email": "person@example.com",
+        "home_lc": { "id": 1340, "name": "COLOMBO SOUTH" },
+        "home_mc": { "id": 1000, "name": "SRI LANKA" }
+      },
+      "opportunity": {
+        "id": 890,
+        "title": "Marketing Intern",
+        "programme": { "id": 1, "short_name_display": "GV" }
+      },
+      "lc_alignment_id": 39880
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "perPage": 25,
+    "total": 75,
+    "totalPages": 3
+  }
+}
+```
 
 **Postman example**
 
@@ -101,6 +190,20 @@ URL: http://localhost:3000/applications?page=1&perPage=25&status=open&currentSta
 
 - **POST** `/applications/sync`
 - Body matches signups sync payload.
+- Response:
+
+```json
+{
+  "success": true,
+  "synced": 15,
+  "details": {
+    "fetched": 20,
+    "eligible": 18,
+    "inserted": 15,
+    "skipped": 3
+  }
+}
+```
 
 **Postman example**
 
@@ -201,6 +304,20 @@ Manual approvals tracking separate from EXPA imports.
 - Query params:
   - `lc_alignment_id` (required, number)
   - `value` (required, non-negative number)
+- Response: HTTP `201 Created`
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "6744d7a14f39fec4052d0e52",
+    "lc_alignment_id": 39880,
+    "value": 3,
+    "createdAt": "2024-11-11T10:05:21.123Z",
+    "updatedAt": "2024-11-11T10:05:21.123Z"
+  }
+}
+```
 
 **Postman example**
 
