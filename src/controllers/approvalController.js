@@ -31,17 +31,22 @@ async function createApprovalController(req, res, next) {
         req.query?.lc_alignment_id ??
         req.query?.alignment ??
         req.params?.lc_alignment_id,
+      programme_id:
+        req.query?.programme_id ??
+        req.query?.program_id ??
+        req.query?.programme ??
+        req.query?.program ??
+        req.params?.programme_id ??
+        req.params?.program_id,
       value:
         req.query?.value ??
         req.query?.approvals ??
         req.params?.value
     };
 
-    console.log('[createApprovalController] Query payload:', payload);
 
     const approval = await createApproval(payload);
 
-    console.log('[createApprovalController] Stored approval:', approval);
 
     res.status(201).json({
       success: true,

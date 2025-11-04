@@ -1,4 +1,12 @@
 const Approval = require('../models/approval');
+const {
+  PROGRAMME_ID_TO_TYPE,
+  PROGRAMME_TYPES,
+  PROGRAMME_TYPES_SET,
+  resolveProgrammeTypeFromId
+} = require('../constants/programmes');
+
+const ALLOWED_PROGRAMME_IDS = Array.from(PROGRAMME_ID_TO_TYPE.keys());
 
 function validationError(message) {
   const error = new Error(message);
@@ -26,22 +34,92 @@ function validateValue(value) {
   return numeric;
 }
 
-async function createApproval({ lc_alignment_id: alignmentId, value }) {
+function validateProgrammeId(programmeId) {
+  const numeric = Number(programmeId);
+
+  if (!Number.isFinite(numeric) || Number.isNaN(numeric)) {
+    throw validationError('programme_id must be a valid number.');
+  }
+
+  if (!PROGRAMME_ID_TO_TYPE.has(numeric)) {
+    throw validationError(
+      `programme_id must be one of the supported programme ids: ${ALLOWED_PROGRAMME_IDS.join(
+        ', '
+      )}.`
+    );
+  }
+
+  return numeric;
+}
+
+function createProgrammeBuckets() {
+  return {
+    [PROGRAMME_TYPES.OGV]: 0,
+    [PROGRAMME_TYPES.OGT]: 0
+  };
+}
+
+function formatProgrammeApprovals(results, ids) {
+  const alignmentMap = new Map();
+
+  results.forEach((item) => {
+    const alignmentId = Number(item._id.lc_alignment_id);
+    const programmeId = Number(item._id.programme_id);
+    const programmeType = resolveProgrammeTypeFromId(programmeId);
+
+    if (!programmeType || !PROGRAMME_TYPES_SET.has(programmeType)) {
+      return;
+    }
+
+    let buckets = alignmentMap.get(alignmentId);
+    if (!buckets) {
+      buckets = createProgrammeBuckets();
+      alignmentMap.set(alignmentId, buckets);
+    }
+
+    buckets[programmeType] += item.approvals;
+  });
+
+  const defaultIds =
+    Array.isArray(ids) && ids.length > 0
+      ? ids.map(validateAlignmentId)
+      : [...alignmentMap.keys()].sort((a, b) => a - b);
+
+  return defaultIds.map((alignmentId) => {
+    const buckets = alignmentMap.get(alignmentId) || createProgrammeBuckets();
+    const total = buckets[PROGRAMME_TYPES.OGV] + buckets[PROGRAMME_TYPES.OGT];
+
+    return {
+      lc_alignment_id: alignmentId,
+      approvals: {
+        total,
+        [PROGRAMME_TYPES.OGV]: buckets[PROGRAMME_TYPES.OGV],
+        [PROGRAMME_TYPES.OGT]: buckets[PROGRAMME_TYPES.OGT]
+      }
+    };
+  });
+}
+
+async function createApproval({ lc_alignment_id: alignmentId, programme_id: programmeId, value }) {
   console.log('[approvalService] createApproval called with:', {
     lc_alignment_id: alignmentId,
+    programme_id: programmeId,
     value
   });
 
   const lcAlignmentId = validateAlignmentId(alignmentId);
+  const programmeIdNumeric = validateProgrammeId(programmeId);
   const safeValue = validateValue(value);
 
   console.log('[approvalService] Normalized values:', {
     lcAlignmentId,
+    programmeId: programmeIdNumeric,
     safeValue
   });
 
   const approval = await Approval.create({
     lc_alignment_id: lcAlignmentId,
+    programme_id: programmeIdNumeric,
     value: safeValue
   });
 
@@ -63,14 +141,22 @@ async function getApprovalSums({ ids }) {
   console.log('[approvalService] Aggregation match stage:', matchStage);
 
   const pipeline = [
-    { $match: matchStage },
+    {
+      $match: {
+        ...matchStage,
+        programme_id: { $in: ALLOWED_PROGRAMME_IDS }
+      }
+    },
     {
       $group: {
-        _id: '$lc_alignment_id',
+        _id: {
+          lc_alignment_id: '$lc_alignment_id',
+          programme_id: '$programme_id'
+        },
         approvals: { $sum: '$value' }
       }
     },
-    { $sort: { _id: 1 } }
+    { $sort: { '_id.lc_alignment_id': 1, '_id.programme_id': 1 } }
   ];
 
   console.log('[approvalService] Aggregation pipeline:', pipeline);
@@ -79,30 +165,11 @@ async function getApprovalSums({ ids }) {
 
   console.log('[approvalService] Aggregation raw results:', results);
 
-  const formatted = results.map((item) => ({
-    lc_alignment_id: Number(item._id),
-    approvals: item.approvals
-  }));
+  const formatted = formatProgrammeApprovals(results, ids);
 
   console.log('[approvalService] Formatted results:', formatted);
 
-  if (!ids || ids.length === 0) {
-    return formatted;
-  }
-
-  const lookup = new Map(formatted.map((entry) => [entry.lc_alignment_id, entry.approvals]));
-
-  console.log('[approvalService] Lookup map:', lookup);
-
-  return ids.map((rawId) => {
-    const numeric = validateAlignmentId(rawId);
-    const approvals = lookup.get(numeric) || 0;
-    console.log('[approvalService] Lookup for id:', numeric, 'approvals:', approvals);
-    return {
-      lc_alignment_id: numeric,
-      approvals
-    };
-  });
+  return formatted;
 }
 
 module.exports = {

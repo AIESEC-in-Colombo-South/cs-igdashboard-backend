@@ -233,6 +233,8 @@ Body (raw JSON):
   - `ids` – optional comma-separated list of `lc_alignment_id` values; defaults to all.
   - `today` – optional (`true/false`). When true, restricts counts to today (UTC midnight to midnight).
 
+Each response includes `signups`/`applications` objects with `total`, `ogv`, and `ogt` counts. Application totals reflect unique people per programme per alignment (duplicate programme applications from the same person are counted once).
+
 **Postman example**
 
 ```
@@ -246,8 +248,14 @@ Response:
 {
   "success": true,
   "data": [
-    { "lc_alignment_id": 39880, "signups": 5 },
-    { "lc_alignment_id": 7669, "signups": 0 }
+    {
+      "lc_alignment_id": 39880,
+      "signups": { "total": 5, "ogv": 3, "ogt": 2 }
+    },
+    {
+      "lc_alignment_id": 7669,
+      "signups": { "total": 0, "ogv": 0, "ogt": 0 }
+    }
   ]
 }
 ```
@@ -277,15 +285,27 @@ Response:
     {
       "date": "2025-01-06",
       "counts": [
-        { "lc_alignment_id": 39880, "applications": 1 },
-        { "lc_alignment_id": 7669, "applications": 0 }
+        {
+          "lc_alignment_id": 39880,
+          "applications": { "total": 1, "ogv": 1, "ogt": 0 }
+        },
+        {
+          "lc_alignment_id": 7669,
+          "applications": { "total": 0, "ogv": 0, "ogt": 0 }
+        }
       ]
     },
     {
       "date": "2025-01-07",
       "counts": [
-        { "lc_alignment_id": 39880, "applications": 2 },
-        { "lc_alignment_id": 7669, "applications": 1 }
+        {
+          "lc_alignment_id": 39880,
+          "applications": { "total": 2, "ogv": 1, "ogt": 1 }
+        },
+        {
+          "lc_alignment_id": 7669,
+          "applications": { "total": 1, "ogv": 0, "ogt": 1 }
+        }
       ]
     }
   ]
@@ -303,6 +323,7 @@ Manual approvals tracking separate from EXPA imports.
 - **POST** `/approvals`
 - Query params:
   - `lc_alignment_id` (required, number)
+  - `programme_id` (required – `7` for OGV, `8` or `9` for OGT)
   - `value` (required, non-negative number)
 - Response: HTTP `201 Created`
 
@@ -312,6 +333,7 @@ Manual approvals tracking separate from EXPA imports.
   "data": {
     "_id": "6744d7a14f39fec4052d0e52",
     "lc_alignment_id": 39880,
+    "programme_id": 7,
     "value": 3,
     "createdAt": "2024-11-11T10:05:21.123Z",
     "updatedAt": "2024-11-11T10:05:21.123Z"
@@ -323,7 +345,7 @@ Manual approvals tracking separate from EXPA imports.
 
 ```
 Method: POST
-URL: http://localhost:3000/approvals?lc_alignment_id=39880&value=3
+URL: http://localhost:3000/approvals?lc_alignment_id=39880&programme_id=7&value=3
 ```
 
 #### Get approval totals
@@ -345,9 +367,18 @@ Response:
 {
   "success": true,
   "data": [
-    { "lc_alignment_id": 39880, "approvals": 7 },
-    { "lc_alignment_id": 7669, "approvals": 0 },
-    { "lc_alignment_id": 13106, "approvals": 4 }
+    {
+      "lc_alignment_id": 39880,
+      "approvals": { "total": 7, "ogv": 4, "ogt": 3 }
+    },
+    {
+      "lc_alignment_id": 7669,
+      "approvals": { "total": 0, "ogv": 0, "ogt": 0 }
+    },
+    {
+      "lc_alignment_id": 13106,
+      "approvals": { "total": 4, "ogv": 1, "ogt": 3 }
+    }
   ]
 }
 ```

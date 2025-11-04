@@ -97,7 +97,7 @@ Fetch application counts per alignment:
 GET http://localhost:3000/alignments/applications
 ```
 
-Both endpoints return an array of `{ lc_alignment_id, signups/applications }` objects sorted by alignment id. When you pass explicit `ids`, any alignment without data is returned with a zero count.
+Both endpoints return an array of `{ lc_alignment_id, signups/applications }` objects where each metric includes `total`, `ogv`, and `ogt` counts. Application totals reflect unique people per programme per alignment—multiple applications from the same person in the same programme are counted once. When you pass explicit `ids`, any alignment without data is returned with zeroed totals.
 
 You can optionally filter the response by providing a comma-separated list of alignment IDs:
 
@@ -127,7 +127,7 @@ The daily endpoints return an array ordered by date. Each item contains the date
 Record manual approval totals per alignment:
 
 ```
-POST http://localhost:3000/approvals?lc_alignment_id=39880&value=3
+POST http://localhost:3000/approvals?lc_alignment_id=39880&programme_id=7&value=3
 ```
 
 Retrieve summed approvals (optionally filtered by alignment IDs):
@@ -137,7 +137,7 @@ GET http://localhost:3000/approvals
 GET http://localhost:3000/approvals?ids=39880,7669,13106
 ```
 
-The response contains `{ lc_alignment_id, approvals }` entries. When `ids` are provided, alignments with no stored approvals return zero.
+The response contains `{ lc_alignment_id, approvals }` entries with `total`, `ogv`, and `ogt` subtotals. When `ids` are provided, alignments with no stored approvals return zeroed values.
 
 ### Running as a cron job (Render)
 
