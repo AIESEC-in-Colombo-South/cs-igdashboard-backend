@@ -123,7 +123,7 @@ function resolveTodayRange(enabled) {
 async function listSignupAlignmentCounts({ ids, today } = {}) {
   const todayRange = resolveTodayRange(today);
   const results = await Person.aggregate([
-    { $match: buildMatchStage('lc_alignment.id', ids, 'created_at', todayRange) },
+    { $match: buildMatchStage('lc_alignment.id', ids, 'created_at_expa', todayRange) },
     {
       $project: {
         alignmentId: '$lc_alignment.id',
@@ -193,7 +193,7 @@ async function listSignupAlignmentCounts({ ids, today } = {}) {
 async function listApplicationAlignmentCounts({ ids, today } = {}) {
   const todayRange = resolveTodayRange(today);
   const results = await Application.aggregate([
-    { $match: buildMatchStage('lc_alignment_id', ids, 'created_at', todayRange) },
+    { $match: buildMatchStage('lc_alignment_id', ids, 'created_at_expa', todayRange) },
     {
       $project: {
         alignmentId: '$lc_alignment_id',
@@ -312,7 +312,7 @@ async function listSignupAlignmentDailyCounts({ ids, startDate, endDate }) {
 
   const dateRange = { start, end: endExclusive };
 
-  const matchStage = buildMatchStage('lc_alignment.id', ids, 'created_at', dateRange);
+  const matchStage = buildMatchStage('lc_alignment.id', ids, 'created_at_expa', dateRange);
 
   const results = await Person.aggregate([
     { $match: matchStage },
@@ -321,7 +321,7 @@ async function listSignupAlignmentDailyCounts({ ids, startDate, endDate }) {
         alignmentId: '$lc_alignment.id',
         day: {
           $dateToString: {
-            date: '$created_at',
+            date: '$created_at_expa',
             format: '%Y-%m-%d',
             timezone: 'UTC'
           }
@@ -397,7 +397,7 @@ async function listApplicationAlignmentDailyCounts({ ids, startDate, endDate }) 
 
   const dateRange = { start, end: endExclusive };
 
-  const matchStage = buildMatchStage('lc_alignment_id', ids, 'created_at', dateRange);
+  const matchStage = buildMatchStage('lc_alignment_id', ids, 'created_at_expa', dateRange);
 
   const results = await Application.aggregate([
     { $match: matchStage },
@@ -406,7 +406,7 @@ async function listApplicationAlignmentDailyCounts({ ids, startDate, endDate }) 
         alignmentId: '$lc_alignment_id',
         day: {
           $dateToString: {
-            date: '$created_at',
+            date: '$created_at_expa',
             format: '%Y-%m-%d',
             timezone: 'UTC'
           }

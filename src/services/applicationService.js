@@ -2,10 +2,11 @@ const Application = require('../models/application');
 const Person = require('../models/person');
 const { fetchApplications } = require('./expaClient');
 
-const NOVEMBER_CREATED_AT_CUTOFF_ISO = '2024-11-05T00:00:00Z';
-const NOVEMBER_CREATED_AT_CUTOFF = new Date(NOVEMBER_CREATED_AT_CUTOFF_ISO);
+// 6 Nov 2025 00:00 Sri Lanka time (UTC+05:30) expressed as UTC.
+const CREATED_AT_CUTOFF_UTC_ISO = '2025-11-05T18:30:00Z';
+const CREATED_AT_CUTOFF = new Date(CREATED_AT_CUTOFF_UTC_ISO);
 
-function enforceNovemberCreatedAtCutoff(filters) {
+function enforceCreatedAtCutoff(filters) {
   const baseFilters =
     filters && typeof filters === 'object' && !Array.isArray(filters) ? { ...filters } : {};
 
@@ -19,14 +20,27 @@ function enforceNovemberCreatedAtCutoff(filters) {
   const shouldOverrideFrom =
     !existingFromDate ||
     Number.isNaN(existingFromDate.getTime()) ||
-    existingFromDate < NOVEMBER_CREATED_AT_CUTOFF;
+    existingFromDate < CREATED_AT_CUTOFF;
 
   if (shouldOverrideFrom) {
-    existingCreatedAt.from = NOVEMBER_CREATED_AT_CUTOFF_ISO;
+    existingCreatedAt.from = CREATED_AT_CUTOFF_UTC_ISO;
   }
 
   baseFilters.created_at = existingCreatedAt;
   return baseFilters;
+}
+
+function isOnOrAfterSriLankaCutoff(date) {
+  if (!(date instanceof Date)) {
+    return false;
+  }
+
+  const timestamp = date.getTime();
+  if (Number.isNaN(timestamp)) {
+    return false;
+  }
+
+  return timestamp >= CREATED_AT_CUTOFF.getTime();
 }
 
 function toDate(value) {
@@ -97,7 +111,7 @@ function normalizeApplication(rawApplication) {
     id: applicationId,
     status: rawApplication.status ?? null,
     current_status: rawApplication.current_status ?? null,
-    created_at: toDate(rawApplication.created_at),
+    created_at_expa: toDate(rawApplication.created_at),
     updated_at: toDate(rawApplication.updated_at),
     date_matched: toDate(rawApplication.date_matched),
     date_approved: toDate(rawApplication.date_approved),
@@ -107,7 +121,7 @@ function normalizeApplication(rawApplication) {
 }
 
 async function syncApplications({ page, perPage, filters, q }) {
-  const filteredGraphqlFilters = enforceNovemberCreatedAtCutoff(filters);
+  const filteredGraphqlFilters = enforceCreatedAtCutoff(filters);
   const applications = await fetchApplications({
     page,
     perPage,
@@ -134,7 +148,7 @@ async function syncApplications({ page, perPage, filters, q }) {
     return { fetched, eligible: 0, inserted: 0, skipped: fetched };
   }
 
-  const novemberApplications = colomboSouthApplications.filter((application) => {
+  const eligibleApplications = colomboSouthApplications.filter((application) => {
     if (!application?.created_at) {
       return false;
     }
@@ -145,16 +159,16 @@ async function syncApplications({ page, perPage, filters, q }) {
       return false;
     }
 
-    return createdDate.getUTCMonth() === 10; // November
+    return isOnOrAfterSriLankaCutoff(createdDate);
   });
 
-  console.log(`[syncApplications] eligibleForNovember=${novemberApplications.length}`);
+  console.log(`[syncApplications] eligibleByCutoff=${eligibleApplications.length}`);
 
-  if (!novemberApplications.length) {
+  if (!eligibleApplications.length) {
     return { fetched, eligible: 0, inserted: 0, skipped: 0 };
   }
 
-  const normalizedApplications = novemberApplications.map((application) =>
+  const normalizedApplications = eligibleApplications.map((application) =>
     normalizeApplication(application)
   );
 

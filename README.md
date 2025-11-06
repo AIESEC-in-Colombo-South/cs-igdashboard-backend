@@ -33,7 +33,7 @@ Send a POST request to `http://localhost:3000/people/sync` with an optional payl
 }
 ```
 
-The service will fetch the latest data from `https://gis-api.aiesec.org/graphql` and write only brand-new November records into the `signups` collection. Existing people stay untouched.
+The service will fetch the latest data from `https://gis-api.aiesec.org/graphql` and persist only records whose EXPA `created_at` is on or after **6 Nov 2025 00:00** Sri Lanka time. Existing people stay untouched.
 
 **Applications**
 
@@ -48,7 +48,7 @@ Send a POST request to `http://localhost:3000/applications/sync` with an optiona
 }
 ```
 
-This fetches opportunity application records and inserts new November items into the `applications` collection.
+This fetches opportunity application records and inserts new items only when EXPA reports `created_at` on or after **6 Nov 2025 00:00** Sri Lanka time.
 
 ### Reading synced data
 
@@ -164,7 +164,7 @@ You can override defaults via environment variables:
 - `SYNC_QUERY` – free-text search string
 - `CORS_ALLOW_ORIGINS` – comma-separated list of allowed origins (defaults to `*`)
 
-Regardless of trigger, only records created in November are synced for both people and applications.
+Regardless of trigger, only records created on or after **6 Nov 2025 00:00** Sri Lanka time are synced for both people and applications.
 
 ## Approvals
 

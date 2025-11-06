@@ -41,7 +41,7 @@ const ApplicationSchema = new Schema(
     id: { type: Number, required: true, unique: true, index: true },
     status: { type: String },
     current_status: { type: String },
-    created_at: { type: Date },
+    created_at_expa: { type: Date },
     updated_at: { type: Date },
     date_matched: { type: Date },
     date_approved: { type: Date },

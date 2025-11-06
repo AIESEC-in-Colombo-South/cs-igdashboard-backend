@@ -62,7 +62,7 @@ URL: http://localhost:3000/health
       "full_name": "Sample Person",
       "status": "open",
       "has_opportunity_applications": false,
-      "created_at": "2024-11-05T12:34:56.789Z",
+      "created_at_expa": "2024-11-05T12:34:56.789Z",
       "updated_at": "2024-11-07T09:15:00.000Z",
       "last_active_at": null,
       "person_profile": {
@@ -89,7 +89,7 @@ Method: GET
 URL: http://localhost:3000/people?page=1&perPage=25&status=open&search=ana
 ```
 
-#### Sync signups (November-only import)
+#### Sync signups (cutoff import)
 
 - **POST** `/people/sync`
 - Body (JSON):
@@ -128,6 +128,8 @@ Body (raw JSON):
 }
 ```
 
+> Only EXPA records with `created_at_expa` on or after **6 Nov 2025 00:00** Sri Lanka time are persisted.
+
 ---
 
 ### Applications
@@ -151,7 +153,7 @@ Body (raw JSON):
       "id": 456,
       "status": "open",
       "current_status": "matched",
-      "created_at": "2024-11-09T08:00:00.000Z",
+      "created_at_expa": "2024-11-09T08:00:00.000Z",
       "updated_at": "2024-11-11T11:30:00.000Z",
       "date_matched": "2024-11-10T00:00:00.000Z",
       "date_approved": null,
@@ -186,7 +188,7 @@ Method: GET
 URL: http://localhost:3000/applications?page=1&perPage=25&status=open&currentStatus=matched&search=jane
 ```
 
-#### Sync applications (November-only import)
+#### Sync applications (cutoff import)
 
 - **POST** `/applications/sync`
 - Body matches signups sync payload.
@@ -204,6 +206,8 @@ URL: http://localhost:3000/applications?page=1&perPage=25&status=open&currentSta
   }
 }
 ```
+
+> Only EXPA records with `created_at_expa` on or after **6 Nov 2025 00:00** Sri Lanka time are persisted.
 
 **Postman example**
 

@@ -27,7 +27,7 @@ const PersonSchema = new Schema(
     id: { type: Number, required: true, unique: true, index: true },
     has_opportunity_applications: { type: Boolean },
     full_name: { type: String },
-    created_at: { type: Date },
+    created_at_expa: { type: Date },
     updated_at: { type: Date },
     last_active_at: { type: Date },
     status: { type: String },

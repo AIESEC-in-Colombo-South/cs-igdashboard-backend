@@ -1,31 +1,20 @@
 const Person = require('../models/person');
 const { fetchPeople } = require('./expaClient');
 
-const NOVEMBER_CREATED_AT_CUTOFF_ISO = '2024-11-05T00:00:00Z';
-const NOVEMBER_CREATED_AT_CUTOFF = new Date(NOVEMBER_CREATED_AT_CUTOFF_ISO);
+// 6 Nov 2025 00:00 Sri Lanka time (UTC+05:30) expressed as UTC.
+const CREATED_AT_CUTOFF_UTC = new Date('2025-11-05T18:30:00Z');
 
-function enforceNovemberCreatedAtCutoff(filters) {
-  const baseFilters =
-    filters && typeof filters === 'object' && !Array.isArray(filters) ? { ...filters } : {};
-
-  const existingCreatedAt =
-    baseFilters.created_at && typeof baseFilters.created_at === 'object'
-      ? { ...baseFilters.created_at }
-      : {};
-
-  const existingFromRaw = existingCreatedAt.from;
-  const existingFromDate = existingFromRaw ? new Date(existingFromRaw) : null;
-  const shouldOverrideFrom =
-    !existingFromDate ||
-    Number.isNaN(existingFromDate.getTime()) ||
-    existingFromDate < NOVEMBER_CREATED_AT_CUTOFF;
-
-  if (shouldOverrideFrom) {
-    existingCreatedAt.from = NOVEMBER_CREATED_AT_CUTOFF_ISO;
+function isOnOrAfterSriLankaCutoff(date) {
+  if (!(date instanceof Date)) {
+    return false;
   }
 
-  baseFilters.created_at = existingCreatedAt;
-  return baseFilters;
+  const timestamp = date.getTime();
+  if (Number.isNaN(timestamp)) {
+    return false;
+  }
+
+  return timestamp >= CREATED_AT_CUTOFF_UTC.getTime();
 }
 
 function normalizePerson(rawPerson) {
@@ -43,7 +32,7 @@ function normalizePerson(rawPerson) {
     id: personId,
     has_opportunity_applications: rawPerson.has_opportunity_applications,
     full_name: rawPerson.full_name ?? null,
-    created_at: toDate(rawPerson.created_at),
+    created_at_expa: toDate(rawPerson.created_at),
     updated_at: toDate(rawPerson.updated_at),
     last_active_at: toDate(rawPerson.last_active_at),
     status: rawPerson.status ?? null,
@@ -76,11 +65,10 @@ function normalizePerson(rawPerson) {
 }
 
 async function syncPeople({ page, perPage, filters, q }) {
-  const filteredGraphqlFilters = enforceNovemberCreatedAtCutoff(filters);
   const people = await fetchPeople({
     page,
     perPage,
-    filters: filteredGraphqlFilters,
+    filters,
     q
   });
 
@@ -92,7 +80,7 @@ async function syncPeople({ page, perPage, filters, q }) {
     return { fetched: 0, eligible: 0, matched: 0, modified: 0, upserted: 0 };
   }
 
-  const novemberPeople = people.filter((person) => {
+  const eligiblePeople = people.filter((person) => {
     if (!person.created_at) {
       return false;
     }
@@ -103,16 +91,16 @@ async function syncPeople({ page, perPage, filters, q }) {
       return false;
     }
 
-    return createdDate.getUTCMonth() === 10; // November
+    return isOnOrAfterSriLankaCutoff(createdDate);
   });
 
-  console.log(`[syncPeople] eligibleForNovember=${novemberPeople.length}`);
+  console.log(`[syncPeople] eligibleByCutoff=${eligiblePeople.length}`);
 
-  if (!novemberPeople.length) {
+  if (!eligiblePeople.length) {
     return { fetched, eligible: 0, inserted: 0, skipped: 0 };
   }
   // Use bulkWrite for efficient upserts
-  const normalizedPeople = novemberPeople.map((person) => {
+  const normalizedPeople = eligiblePeople.map((person) => {
     const normalized = normalizePerson(person);
     return normalized;
   });
