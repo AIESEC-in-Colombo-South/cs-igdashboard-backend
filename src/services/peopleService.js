@@ -1,6 +1,33 @@
 const Person = require('../models/person');
 const { fetchPeople } = require('./expaClient');
 
+const NOVEMBER_CREATED_AT_CUTOFF_ISO = '2024-11-05T00:00:00Z';
+const NOVEMBER_CREATED_AT_CUTOFF = new Date(NOVEMBER_CREATED_AT_CUTOFF_ISO);
+
+function enforceNovemberCreatedAtCutoff(filters) {
+  const baseFilters =
+    filters && typeof filters === 'object' && !Array.isArray(filters) ? { ...filters } : {};
+
+  const existingCreatedAt =
+    baseFilters.created_at && typeof baseFilters.created_at === 'object'
+      ? { ...baseFilters.created_at }
+      : {};
+
+  const existingFromRaw = existingCreatedAt.from;
+  const existingFromDate = existingFromRaw ? new Date(existingFromRaw) : null;
+  const shouldOverrideFrom =
+    !existingFromDate ||
+    Number.isNaN(existingFromDate.getTime()) ||
+    existingFromDate < NOVEMBER_CREATED_AT_CUTOFF;
+
+  if (shouldOverrideFrom) {
+    existingCreatedAt.from = NOVEMBER_CREATED_AT_CUTOFF_ISO;
+  }
+
+  baseFilters.created_at = existingCreatedAt;
+  return baseFilters;
+}
+
 function normalizePerson(rawPerson) {
   const personId = Number(rawPerson.id);
 
@@ -49,7 +76,13 @@ function normalizePerson(rawPerson) {
 }
 
 async function syncPeople({ page, perPage, filters, q }) {
-  const people = await fetchPeople({ page, perPage, filters, q });
+  const filteredGraphqlFilters = enforceNovemberCreatedAtCutoff(filters);
+  const people = await fetchPeople({
+    page,
+    perPage,
+    filters: filteredGraphqlFilters,
+    q
+  });
 
   console.log(`[syncPeople] fetched=${people.length}`);
 

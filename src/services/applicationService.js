@@ -2,6 +2,33 @@ const Application = require('../models/application');
 const Person = require('../models/person');
 const { fetchApplications } = require('./expaClient');
 
+const NOVEMBER_CREATED_AT_CUTOFF_ISO = '2024-11-05T00:00:00Z';
+const NOVEMBER_CREATED_AT_CUTOFF = new Date(NOVEMBER_CREATED_AT_CUTOFF_ISO);
+
+function enforceNovemberCreatedAtCutoff(filters) {
+  const baseFilters =
+    filters && typeof filters === 'object' && !Array.isArray(filters) ? { ...filters } : {};
+
+  const existingCreatedAt =
+    baseFilters.created_at && typeof baseFilters.created_at === 'object'
+      ? { ...baseFilters.created_at }
+      : {};
+
+  const existingFromRaw = existingCreatedAt.from;
+  const existingFromDate = existingFromRaw ? new Date(existingFromRaw) : null;
+  const shouldOverrideFrom =
+    !existingFromDate ||
+    Number.isNaN(existingFromDate.getTime()) ||
+    existingFromDate < NOVEMBER_CREATED_AT_CUTOFF;
+
+  if (shouldOverrideFrom) {
+    existingCreatedAt.from = NOVEMBER_CREATED_AT_CUTOFF_ISO;
+  }
+
+  baseFilters.created_at = existingCreatedAt;
+  return baseFilters;
+}
+
 function toDate(value) {
   if (!value) {
     return null;
@@ -80,7 +107,13 @@ function normalizeApplication(rawApplication) {
 }
 
 async function syncApplications({ page, perPage, filters, q }) {
-  const applications = await fetchApplications({ page, perPage, filters, q });
+  const filteredGraphqlFilters = enforceNovemberCreatedAtCutoff(filters);
+  const applications = await fetchApplications({
+    page,
+    perPage,
+    filters: filteredGraphqlFilters,
+    q
+  });
 
   console.log(`[syncApplications] fetched=${applications.length}`);
 
